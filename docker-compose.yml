@@ -1,0 +1,30 @@
+# Versión de la configuración de Docker Compose
+version: '3'
+
+# Definición de servicios
+services:
+  # Servicio llamado 'neon io'
+  neon-services:
+    # Configuración para construir la imagen del contenedor
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Nombre de la imagen resultante
+    image: neon-image
+    # Conexión a la red llamada 'luis'
+    networks:
+      - luis
+    # Mapeo de puertos: Mapea el puerto 6000 del host al puerto 80 del contenedor
+    ports:
+      - 6100:80
+    # Nombre del contenedor
+    container_name: neoin.io
+    # Configuración para reiniciar siempre el contenedor
+    restart: always
+
+# Definición de redes
+networks:
+  # Definición de la red llamada 'luis'
+  luis:
+    # Especifica que la red es externa (puede haber sido creada fuera de este archivo)
+    external: true
