@@ -1,6 +1,9 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
+const fogCanvas = document.getElementById('fogCanvas');
+const fogCtx = fogCanvas.getContext('2d');
+
 const minimap = document.getElementById('minimap');
 const minimapCtx = minimap.getContext('2d');
 
@@ -8,24 +11,30 @@ const WORLD_WIDTH = 3000;
 const WORLD_HEIGHT = 3000;
 const MINIMAP_SIZE = 150;
 
-const fps = 60;
-let frameInterval = 1000 / fps;
-let lastFrameTime = 0;
-let accumulator = 0;
+// Configuración del game loop
+const FIXED_FPS = 60;
+const FRAME_TIME = 1000 / FIXED_FPS;
+const MAX_FRAME_SKIP = 5;
 
-// Para el cálculo de FPS
+let lastFrameTime = performance.now();
+let deltaTime = 0;
 let frameCount = 0;
 let lastFpsUpdate = 0;
 let currentFps = 0;
+let gameTimeMs = 0; // Tiempo total del juego en milisegundos
+let gamePaused = false;
 
-// Para mostrar/ocultar FPS
-let showFps = true;
-let lastPressTime = 0;
+let fogStartTime = 0;  // Variable para almacenar el tiempo cuando se activa la niebla
+let fogDuration = 5000; // Duración de la niebla en milisegundos (5 segundos)
+let fogActive = false; // Variable para saber si la niebla está activa
+let lastTimeChecked = 0; // Tiempo de la última comprobación de la niebla
 
 // Ajustar tamaño del canvas
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    fogCanvas.width = window.innerWidth;
+    fogCanvas.height = window.innerHeight;
     minimap.width = MINIMAP_SIZE;
     minimap.height = MINIMAP_SIZE;
 }
@@ -134,6 +143,20 @@ const keys = {};
 document.addEventListener('keydown', (e) => keys[e.key] = true);
 document.addEventListener('keyup', (e) => keys[e.key] = false);
 
+function formatTime(ms) {
+    let seconds = Math.floor(ms / 1000);
+    let minutes = Math.floor(seconds / 60);
+    let hours = Math.floor(minutes / 60);
+
+    seconds = seconds % 60;
+    minutes = minutes % 60;
+
+    // Agregar ceros a la izquierda cuando sea necesario
+    const pad = (num) => num.toString().padStart(2, '0');
+
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
 // Jugador
 const player = new Player(
     WORLD_WIDTH / 2,
@@ -145,7 +168,7 @@ const player = new Player(
 player.setType('player');
 
 // Bots para simular otros jugadores
-let bots = Array(10).fill().map(() => {
+let bots = Array(15).fill().map(() => {
     const bot = new Player(
         Math.random() * WORLD_WIDTH,
         Math.random() * WORLD_HEIGHT,
@@ -153,8 +176,8 @@ let bots = Array(10).fill().map(() => {
         Math.random() * 360,
         "Bot" + Math.floor(Math.random() * 1000),
         {
-            x: Math.random() * 10 - 2,
-            y: Math.random() * 10 - 2
+            x: Math.floor(Math.random() * (10 - 7 + 1) + 7),
+            y: Math.floor(Math.random() * (10 - 7 + 1) + 7)
         }
     );
     bot.setType('bot');
@@ -242,7 +265,8 @@ function updateBots() {
             if (bot.size > player.size) {
                 bot.score += player.score + 10;
                 bot.size += player.size * 0.5;
-                player.restart();
+                // player.restart();
+                location.reload();
             }
         }
 
@@ -277,6 +301,10 @@ function updateBots() {
 function spawnPoints() {
     // Número de puntos depende de la cantidad de bots
     const numberOfPoints = bots.length === 0 ? 0 : bots.length === 1 ? 10 : 50;
+
+    if (bots.length === 0) {
+        location.reload();
+    }
 
     // Genera puntos mientras haya menos puntos de los que queremos
     while (points.length < numberOfPoints) {
@@ -319,11 +347,83 @@ function updateLeaderboard() {
         .map((p, i) => `${i + 1}. ${p.name}: ${Math.floor(p.score)}`)
         .join('<br>');
     document.getElementById('playerCount').textContent = bots.length + 1;
-
-    document.getElementById('fpsText').textContent = currentFps.toFixed(2);
 }
 
-function update() {
+function updateFpsCounter(currentTime) {
+    frameCount++;
+
+    if (currentTime - lastFpsUpdate >= 1000) {
+        currentFps = Math.round((frameCount * 1000) / (currentTime - lastFpsUpdate));
+        document.getElementById('fpsText').textContent = `FPS: ${currentFps}`;
+        frameCount = 0;
+        lastFpsUpdate = currentTime;
+    }
+}
+
+function drawFog() {
+
+    if (fogActive) {
+        // Si ha pasado el tiempo de duración de la niebla, desactívala
+        if (gameTimeMs - fogStartTime >= fogDuration) {
+            fogActive = false;
+        }
+    }
+
+    if (fogActive) {
+        fogCtx.save();
+        fogCtx.clearRect(0, 0, canvas.width, canvas.height);
+        fogCtx.fillStyle = 'black';
+        fogCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const screenX = player.x - camera.x;
+        const screenY = player.y - camera.y;
+
+        const radius = ((player.size * 0.50) * 10) + player.size;
+
+        fogCtx.globalCompositeOperation = 'destination-out';
+        const gradient = fogCtx.createRadialGradient(
+            screenX, screenY, 0,
+            screenX, screenY, radius
+        );
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.5)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        fogCtx.fillStyle = gradient;
+        fogCtx.beginPath();
+        fogCtx.arc(screenX, screenY, radius, 0, Math.PI * 2);
+        fogCtx.fill();
+
+        fogCtx.globalCompositeOperation = 'source-over';
+        fogCtx.restore();
+    } else {
+        fogCtx.save();
+        fogCtx.clearRect(0, 0, canvas.width, canvas.height);
+        fogCtx.fillStyle = 'rgba(255, 255, 255, 0)';
+        fogCtx.fillRect(0, 0, canvas.width, canvas.height);
+        fogCtx.restore();
+    }
+}
+
+function update(dt) {
+    // Actualizar el tiempo del juego
+    gameTimeMs += dt;
+
+    // Comprobar si han pasado 5 segundos
+    if (gameTimeMs - lastTimeChecked >= 5000) {
+        lastTimeChecked = gameTimeMs;  // Actualiza el tiempo de la última comprobación
+        // Alterna el estado de la niebla
+        fogActive = !fogActive;
+
+        // Si la niebla se activa, guarda el tiempo de inicio
+        if (fogActive) {
+            fogStartTime = gameTimeMs;
+        }
+    }
+
+    // Actualizar timeDisplay
+    document.getElementById('gameTime').textContent = `Time: ${formatTime(gameTimeMs)}`;
+
     // Actualizar estado
     updatePlayer();
     camera.update(keys);
@@ -335,14 +435,14 @@ function update() {
 
 function draw() {
     // Fondo con trail
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
 
     // Dibujar cuadrícula
-    ctx.strokeStyle = '#345222';
+    ctx.strokeStyle = 'black';
     ctx.lineWidth = 1;
     const gridSize = 100;
     for (let x = 0; x < WORLD_WIDTH; x += gridSize) {
@@ -383,24 +483,12 @@ function draw() {
         ctx.fill();
     }
 
-
-    // if (joystick.active) {
-    //     // Dibujar base del joystick
-    //     ctx.beginPath();
-    //     ctx.arc(joystickBase.x, joystickBase.y, joystickRadius, 0, Math.PI * 2);
-    //     ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
-    //     ctx.fill();
-
-    //     // Dibujar el mango del joystick
-    //     ctx.beginPath();
-    //     ctx.arc(joystick.x, joystick.y, handleRadius, 0, Math.PI * 2);
-    //     ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
-    //     ctx.fill();
-    // }
+    // Dibujar el fog
+    drawFog();
 
     // Dibujar minimapa
     // minimapCtx.save();
-    minimapCtx.fillStyle = '#000';
+    minimapCtx.fillStyle = 'white';
     minimapCtx.fillRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
     // minimapCtx.strokeStyle = '#0ff';
     // minimapCtx.strokeRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
@@ -462,16 +550,6 @@ function draw() {
     // minimapCtx.strokeRect(0, 0, minimapScale / 2, minimapScale / 2);    
 }
 
-function calculateFps(currentTime) {
-    frameCount++;
-
-    if (currentTime > lastFpsUpdate + 1000) { // Actualizar FPS cada segundo
-        currentFps = frameCount * 1000 / (currentTime - lastFpsUpdate);
-        lastFpsUpdate = currentTime;
-        frameCount = 0;
-    }
-}
-
 
 // Eventos para el mouse
 canvas.addEventListener('mousemove', (e) => {
@@ -487,7 +565,7 @@ canvas.addEventListener('touchstart', (e) => {
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
     player.startJoystick(touch.clientX - rect.left, touch.clientY - rect.top);
-});
+}, { passive: false });
 
 canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
@@ -495,7 +573,7 @@ canvas.addEventListener('touchmove', (e) => {
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
     player.updateJoystick(touch.clientX - rect.left, touch.clientY - rect.top);
-});
+}, { passive: false });
 
 canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
@@ -504,23 +582,57 @@ canvas.addEventListener('touchend', (e) => {
 });
 
 function gameLoop(currentTime) {
-    requestAnimationFrame(gameLoop);
+    // Calcular el tiempo transcurrido
+    deltaTime = currentTime - lastFrameTime;
 
-    const deltaTime = currentTime - lastFrameTime;
-    accumulator += deltaTime;
-
-    calculateFps(currentTime);
-
-    while (accumulator >= frameInterval) {
-        update();
-        accumulator -= frameInterval;
+    // Limitar el delta time para evitar saltos grandes
+    if (deltaTime > 1000) {
+        deltaTime = FRAME_TIME;
     }
 
-    draw();
+    // Acumular tiempo y actualizar mientras sea necesario
+    let framesToProcess = Math.floor(deltaTime / FRAME_TIME);
 
-    lastFrameTime = currentTime;
+    // Limitar el número de frames que se pueden procesar
+    if (framesToProcess > MAX_FRAME_SKIP) {
+        framesToProcess = MAX_FRAME_SKIP;
+    }
+
+    // Procesar los frames necesarios
+    if (framesToProcess > 0) {
+        // Actualizar el juego el número correcto de veces
+        for (let i = 0; i < framesToProcess; i++) {
+            update(FRAME_TIME);
+        }
+
+        // Dibujar una vez después de todas las actualizaciones
+        draw();
+
+        // Actualizar el tiempo del último frame
+        lastFrameTime = currentTime - (deltaTime % FRAME_TIME);
+    }
+
+    // Actualizar contador de FPS
+    updateFpsCounter(currentTime);
+
+    // Programar el siguiente frame
+    requestAnimationFrame(gameLoop);
 }
 
-lastFrameTime = performance.now();
-lastFpsUpdate = lastFrameTime;
-requestAnimationFrame(gameLoop);
+const music = document.getElementById('backgroundMusic');
+const musicButtonContainer = document.getElementById('musicButtonContainer');
+const startMusicButton = document.getElementById('startMusicButton');
+
+// Evento de clic para comenzar la música
+startMusicButton.addEventListener('click', () => {
+    music.play(); // Reproducir la música
+    musicButtonContainer.style.display = 'none'; // Mostrar los botones de música
+
+    // Iniciar el game loop
+    lastFrameTime = performance.now();
+    lastFpsUpdate = lastFrameTime;
+    requestAnimationFrame(gameLoop);
+});
+
+
+

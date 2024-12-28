@@ -9,11 +9,45 @@
       }
 
       body {
+        font-family: monospace;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
         margin: 0;
-        background: black;
-        color: white;
-        font-family: Arial;
+        background: white;
         overflow: hidden;
+        font-size: 12px;
+      }
+
+      #musicButtonContainer{
+        position: fixed;
+        background-color: rgba(0, 0, 0, 0.7);
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      /* Asegura que el botón esté centrado */
+      #startMusicButton {
+        padding: 10px 20px;
+        font-size: 1.5rem;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+      }
+
+      #startMusicButton:hover {
+        background-color: #45a049;
       }
 
       #leaderboard {
@@ -23,6 +57,9 @@
         background: rgba(0, 0, 0, 0.7);
         padding: 10px;
         border-radius: 5px;
+        color: white;
+        z-index: 100;
+        font-size: 1.5rem;
       }
 
       #players {
@@ -32,6 +69,9 @@
         background: rgba(0, 0, 0, 0.7);
         padding: 10px;
         border-radius: 5px;
+        color: white;
+        z-index: 100;
+        font-size: 1.5rem;
       }
 
       #fps {
@@ -41,6 +81,38 @@
         background: rgba(0, 0, 0, 0.7);
         padding: 10px;
         border-radius: 5px;
+        color: white;
+        z-index: 100;
+        font-size: 1.5rem;
+      }
+
+      #gameTime {
+        position: fixed;
+        top: 90px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        color: white;
+        z-index: 100;
+        font-size: 1.5rem;
+      }
+
+      #game-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      #canvas,
+      #fogCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      #fogCanvas {
+        pointer-events: none;
       }
 
       #minimapContainer {
@@ -48,12 +120,12 @@
         right: 20px;
         bottom: 20px;
         background: rgba(0, 0, 0, 0.7);
-        border: 2px solid #0ff;
+        border: 2px solid black;
         border-radius: 5px;
       }
+
       #minimap {
-        padding: 0px;
-        margin: 0px;
+        pointer-events: none;
       }
     </style>
   </head>
@@ -62,12 +134,30 @@
       Top 5 Jugadores<br />
       <span id="top"></span>
     </div>
+
     <div id="players">Jugadores: <span id="playerCount">1</span></div>
     <div id="fps">Fps: <span id="fpsText">0</span></div>
-    <canvas id="canvas"></canvas>
+    <div id="gameTime">Time: 00:00:00</div>
+
+    <div id="game-container">
+      <canvas id="canvas"></canvas>
+      <canvas id="fogCanvas"></canvas>
+    </div>
+
     <div id="minimapContainer">
       <canvas id="minimap"></canvas>
     </div>
+
+    <!-- Botón para iniciar la música -->
+   <div id="musicButtonContainer">
+     <button id="startMusicButton">Iniciar el Juego</button>
+   </div>
+
+    <!-- Reproductor de música -->
+    <audio id="backgroundMusic" loop>
+      <source src="Brain Dance.mp3" type="audio/mp3" />
+      Tu navegador no soporta la etiqueta de audio.
+    </audio>
 
     <script src="camera.js"></script>
     <script src="point.js"></script>
