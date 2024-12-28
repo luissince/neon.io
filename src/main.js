@@ -33,6 +33,8 @@ let fogDuration = 5000; // Duración de la niebla en milisegundos (5 segundos)
 let fogActive = false; // Variable para saber si la niebla está activa
 let lastTimeChecked = 0; // Tiempo de la última comprobación de la niebla
 
+let live = false;
+
 // Ajustar tamaño del canvas
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -236,12 +238,13 @@ function updateBots(dt) {
         const dx = player.x - bot.x;
         const dy = player.y - bot.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < bot.size + player.size) {
+        if (distance < bot.size + player.size && !live) {
             if (bot.size > player.size) {
                 bot.score += player.score + 10;
                 bot.size += player.size * 0.5;
+                live = true;
                 // player.restart();
-                location.reload();
+                // location.reload();
             }
         }
 
@@ -335,6 +338,10 @@ function updateFpsCounter(currentTime) {
 }
 
 function update(dt) {
+    if (live) {
+        return;
+    };
+
     // Actualizar el tiempo del juego
     gameTimeMs += dt;
 
@@ -556,6 +563,17 @@ function draw() {
 
     // Dibujar minimapa
     drawMinimap();
+
+    if (live) {
+        // Estilo del texto
+        ctx.font = '48px Arial'; // Tamaño y fuente
+        ctx.fillStyle = 'red'; // Color del texto
+        ctx.textAlign = 'center'; // Alineación horizontal
+        ctx.textBaseline = 'middle'; // Alineación vertical
+
+        // Dibujar el texto centrado
+        ctx.fillText("PERDISTE", canvas.width / 2, canvas.height / 2);
+    }
 }
 
 
