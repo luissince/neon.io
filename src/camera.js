@@ -1,10 +1,11 @@
-class Camera {
+export default class Camera {
     constructor(x, y, width, height) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        this.speed = 5;
+        this.speed = 500; // pixels per second
+        this.scale = 1;
         this.color = 'rgba(136, 13, 13, 0.5)';
     }
 
@@ -28,8 +29,8 @@ class Camera {
         // this.y = Math.max(0, Math.min(this.y, this.worldHeight - this.height));
 
 
-        this.x = player.x - this.width / 2;
-        this.y = player.y - this.height / 2;        
+        this.x = this.player.x - this.width / 2;
+        this.y = this.player.y - this.height / 2;        
     }
 
     draw(ctx) {

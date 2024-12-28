@@ -1,4 +1,4 @@
-class Point {
+export default class Point {
     constructor(x, y, size, hue) {
         this.x = x;
         this.y = y;

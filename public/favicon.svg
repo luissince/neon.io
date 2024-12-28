@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-250 -250 500 500">
+  <!-- Filtro para el efecto de brillo -->
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Grupo principal con el efecto de brillo -->
+  <g filter="url(#glow)">
+    <!-- Cuerpo principal -->
+    <circle cx="0" cy="0" r="200" fill="#4A90E2"/>
+    
+    <!-- Ojos (blancos) -->
+    <circle cx="-60" cy="-40" r="40" fill="white"/>
+    <circle cx="60" cy="-40" r="40" fill="white"/>
+    
+    <!-- Pupilas -->
+    <circle cx="-60" cy="-40" r="20" fill="black">
+      <!-- Animación de las pupilas -->
+      <animate 
+        attributeName="cx" 
+        values="-72;-48;-72" 
+        dur="3s" 
+        repeatCount="indefinite"/>
+      <animate 
+        attributeName="cy" 
+        values="-52;-28;-52" 
+        dur="3s" 
+        repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="-40" r="20" fill="black">
+      <animate 
+        attributeName="cx" 
+        values="48;72;48" 
+        dur="3s" 
+        repeatCount="indefinite"/>
+      <animate 
+        attributeName="cy" 
+        values="-52;-28;-52" 
+        dur="3s" 
+        repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>

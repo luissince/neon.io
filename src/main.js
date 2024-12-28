@@ -1,3 +1,7 @@
+import Player from './player.js';
+import Camera from './camera.js';
+import Point from './point.js';
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -157,15 +161,6 @@ function formatTime(ms) {
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
 
-// Jugador
-const player = new Player(
-    WORLD_WIDTH / 2,
-    WORLD_HEIGHT / 2,
-    20,
-    Math.random() * 360,
-    "Player" + Math.floor(Math.random() * 1000)
-);
-player.setType('player');
 
 // Bots para simular otros jugadores
 let bots = Array(15).fill().map(() => {
@@ -176,8 +171,8 @@ let bots = Array(15).fill().map(() => {
         Math.random() * 360,
         "Bot" + Math.floor(Math.random() * 1000),
         {
-            x: Math.floor(Math.random() * (10 - 7 + 1) + 7),
-            y: Math.floor(Math.random() * (10 - 7 + 1) + 7)
+            x: Math.floor(Math.random() * (400 - 300 + 100) + 300),
+            y: Math.floor(Math.random() * (400 - 300 + 100) + 300)
         }
     );
     bot.setType('bot');
@@ -189,55 +184,35 @@ let points = Array(500).fill().map(() => {
     return new Point(
         Math.random() * WORLD_WIDTH,
         Math.random() * WORLD_HEIGHT,
-        5,
+        10,
         Math.random() * 360
     );
 });
+
+// Jugador
+const player = new Player(
+    WORLD_WIDTH / 2,
+    WORLD_HEIGHT / 2,
+    20,
+    Math.random() * 360,
+    "Player" + Math.floor(Math.random() * 1000)
+);
+player.setType('player');
+player.setCanvas(canvas);
+player.setSizeWorld(WORLD_WIDTH, WORLD_HEIGHT);
 
 // Cámara
 const camera = new Camera(0, 0, canvas.width, canvas.height);
 camera.init(WORLD_WIDTH, WORLD_HEIGHT, player);
 
-function updatePlayer() {
-    // Movimiento suave hacia el mouse
-    player.update(keys, WORLD_WIDTH, WORLD_HEIGHT, canvas);
+function updateBots(dt) {
+    // Convertir deltaTime a segundos
+    const dtSeconds = dt / 1000;
 
-    // Colisión con puntos
-    points = points.filter(point => {
-        const dx = player.x - point.x;
-        const dy = player.y - point.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < player.size + point.size) {
-            player.score += 10;
-            player.size += 0.5;
-            return false;
-        }
-        return true;
-    });
-
-    // Colisión con bots
-    bots = bots.filter(bot => {
-        const dx = player.x - bot.x;
-        const dy = player.y - bot.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < player.size + bot.size) {
-            if (player.size > bot.size) {
-                player.score += bot.score + 10;
-                player.size += bot.size * 0.5;
-                return false;
-            }
-        }
-        return true;
-    });
-}
-
-function updateBots() {
     bots.forEach(bot => {
         // Movimiento
-        bot.x += bot.velocity.x;
-        bot.y += bot.velocity.y;
+        bot.x += bot.velocity.x * dtSeconds;
+        bot.y += bot.velocity.y * dtSeconds;
 
         // Rebotar en los bordes
         if (bot.x < 0 || bot.x > WORLD_WIDTH) bot.velocity.x *= -1;
@@ -294,7 +269,6 @@ function updateBots() {
                 }
             }
         });
-
     });
 }
 
@@ -360,8 +334,66 @@ function updateFpsCounter(currentTime) {
     }
 }
 
-function drawFog() {
+function update(dt) {
+    // Actualizar el tiempo del juego
+    gameTimeMs += dt;
 
+    // Comprobar si han pasado 5 segundos
+    if (gameTimeMs - lastTimeChecked >= 5000) {
+        lastTimeChecked = gameTimeMs;  // Actualiza el tiempo de la última comprobación
+        // Alterna el estado de la niebla
+        fogActive = !fogActive;
+
+        // Si la niebla se activa, guarda el tiempo de inicio
+        if (fogActive) {
+            fogStartTime = gameTimeMs;
+        }
+    }
+
+    // Actualizar timeDisplay
+    document.getElementById('gameTime').textContent = `Time: ${formatTime(gameTimeMs)}`;
+
+    // Actualizar estado
+    player.update(keys, dt);
+    camera.update(keys);
+    updateBots(dt);
+    spawnPoints();
+    updateLeaderboard();
+
+    // Colisión con puntos
+    points = points.filter(point => {
+        const dx = player.x - point.x;
+        const dy = player.y - point.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < player.size + point.size) {
+            player.score += 10;
+            player.size += 0.5;
+            return false;
+        }
+        return true;
+    });
+
+
+    // Colisión con bots
+    bots = bots.filter(bot => {
+        const dx = player.x - bot.x;
+        const dy = player.y - bot.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < player.size + bot.size) {
+            if (player.size > bot.size) {
+                player.score += bot.score + 10;
+                player.size += bot.size * 0.5;
+                return false;
+            }
+        }
+        return true;
+    });
+
+}
+
+function drawFog() {
     if (fogActive) {
         // Si ha pasado el tiempo de duración de la niebla, desactívala
         if (gameTimeMs - fogStartTime >= fogDuration) {
@@ -405,87 +437,7 @@ function drawFog() {
     }
 }
 
-function update(dt) {
-    // Actualizar el tiempo del juego
-    gameTimeMs += dt;
-
-    // Comprobar si han pasado 5 segundos
-    if (gameTimeMs - lastTimeChecked >= 5000) {
-        lastTimeChecked = gameTimeMs;  // Actualiza el tiempo de la última comprobación
-        // Alterna el estado de la niebla
-        fogActive = !fogActive;
-
-        // Si la niebla se activa, guarda el tiempo de inicio
-        if (fogActive) {
-            fogStartTime = gameTimeMs;
-        }
-    }
-
-    // Actualizar timeDisplay
-    document.getElementById('gameTime').textContent = `Time: ${formatTime(gameTimeMs)}`;
-
-    // Actualizar estado
-    updatePlayer();
-    camera.update(keys);
-    updateBots();
-    spawnPoints();
-    updateLeaderboard();
-
-}
-
-function draw() {
-    // Fondo con trail
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    ctx.translate(-camera.x, -camera.y);
-
-    // Dibujar cuadrícula
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 1;
-    const gridSize = 100;
-    for (let x = 0; x < WORLD_WIDTH; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, WORLD_HEIGHT);
-        ctx.stroke();
-    }
-    for (let y = 0; y < WORLD_HEIGHT; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(WORLD_WIDTH, y);
-        ctx.stroke();
-    }
-
-    // Dibujar puntos
-    points.forEach(point => point.draw(ctx));
-
-    // Dibujar bots y jugador
-    bots.forEach(bot => bot.draw(ctx));
-    player.draw(ctx, canvas);
-
-    // Dibujar cámara
-    // camera.draw(ctx);
-
-    ctx.restore();
-
-    // Dibujar el joystick si está activo
-    if (player.joystick.active) {
-        ctx.beginPath();
-        ctx.arc(player.joystickBase.x, player.joystickBase.y, player.joystickRadius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(player.joystick.x, player.joystick.y, 20, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
-        ctx.fill();
-    }
-
-    // Dibujar el fog
-    drawFog();
-
+function drawMinimap() {
     // Dibujar minimapa
     // minimapCtx.save();
     minimapCtx.fillStyle = 'white';
@@ -547,13 +499,68 @@ function draw() {
         camera.height * minimapScaleHeight
     );
     // minimapCtx.strokeStyle = camera.color;
-    // minimapCtx.strokeRect(0, 0, minimapScale / 2, minimapScale / 2);    
+    // minimapCtx.strokeRect(0, 0, minimapScale / 2, minimapScale / 2);   
+}
+
+function draw() {
+    // Fondo con trail
+    ctx.fillStyle = fogActive ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+
+    // Dibujar cuadrícula
+    ctx.strokeStyle = fogActive ? 'black' : 'white';
+    ctx.lineWidth = 1;
+    const gridSize = 100;
+    for (let x = 0; x < WORLD_WIDTH; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, WORLD_HEIGHT);
+        ctx.stroke();
+    }
+    for (let y = 0; y < WORLD_HEIGHT; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(WORLD_WIDTH, y);
+        ctx.stroke();
+    }
+
+    // Dibujar puntos
+    points.forEach(point => point.draw(ctx));
+
+    // Dibujar bots y jugador
+    bots.forEach(bot => bot.draw(ctx));
+    player.draw(ctx);
+
+    // Dibujar cámara
+    // camera.draw(ctx);
+    ctx.restore();
+
+    // Dibujar el joystick si está activo
+    if (player.joystick.active) {
+        ctx.beginPath();
+        ctx.arc(player.joystickBase.x, player.joystickBase.y, player.joystickRadius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(player.joystick.x, player.joystick.y, 20, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
+        ctx.fill();
+    }
+
+    // Dibujar el fog
+    drawFog();
+
+    // Dibujar minimapa
+    drawMinimap();
 }
 
 
 // Eventos para el mouse
 canvas.addEventListener('mousemove', (e) => {
-    console.log("Mouse move");
     const rect = canvas.getBoundingClientRect();
     player.updateMousePosition(e.clientX - rect.left, e.clientY - rect.top);
 });
@@ -561,7 +568,6 @@ canvas.addEventListener('mousemove', (e) => {
 // Eventos para el touch (joystick)
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    console.log("Touch start");
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
     player.startJoystick(touch.clientX - rect.left, touch.clientY - rect.top);
@@ -569,7 +575,6 @@ canvas.addEventListener('touchstart', (e) => {
 
 canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
-    console.log("Touch move");
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0];
     player.updateJoystick(touch.clientX - rect.left, touch.clientY - rect.top);
@@ -577,7 +582,6 @@ canvas.addEventListener('touchmove', (e) => {
 
 canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
-    console.log("Touch end");
     player.endJoystick();
 });
 
@@ -633,6 +637,4 @@ startMusicButton.addEventListener('click', () => {
     lastFpsUpdate = lastFrameTime;
     requestAnimationFrame(gameLoop);
 });
-
-
 

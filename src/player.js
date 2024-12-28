@@ -1,5 +1,5 @@
 // Jugador
-class Player {
+export default class Player {
     constructor(x, y, size, hue, name, velocity = { x: 0, y: 0 }) {
         // Almacenar los valores iniciales
         this.initialX = x;
@@ -20,7 +20,7 @@ class Player {
         this.velocity = velocity;
 
         this.color = `hsl(${hue}, 100%, 50%)`;
-        this.speed = 7;
+        this.speed = 350; // pixels por segundo
 
         this.mouse = { x: 0, y: 0 };
         this.joystick = { x: 0, y: 0, active: false };
@@ -37,6 +37,15 @@ class Player {
 
     setType(type) {
         this.type = type;
+    }
+
+    setCanvas(canvas) {
+        this.canvas = canvas;
+    }
+
+    setSizeWorld(width, height) {
+        this.worldWidth = width;
+        this.worldHeight = height;
     }
 
     updateMousePosition(x, y) {
@@ -97,7 +106,11 @@ class Player {
         this.color = `hsl(${this.hue}, 100%, 50%)`;
     }
 
-    update(keys, worldWidth, worldHeight, canvas) {
+    update(keys, dt) {
+        // Convertir dt a segundos para cálculos más precisos
+        const dtSeconds = dt / 1000;
+
+
         /**
          * Movimiento con teclas
          */
@@ -121,8 +134,8 @@ class Player {
          */
 
         // Calcular dirección hacia el mouse
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
 
         if (this.joystick.active) {
             // Movimiento con joystick
@@ -132,9 +145,9 @@ class Player {
             const maxDistance = this.joystickRadius;
 
             if (distance > 0) {
-                const speed = (distance / maxDistance) * this.speed;
-                this.currentVelocity.x = (dx / distance) * speed;
-                this.currentVelocity.y = (dy / distance) * speed;
+                const baseSpeed = (distance / maxDistance) * this.speed;
+                this.currentVelocity.x = (dx / distance) * baseSpeed * dtSeconds;
+                this.currentVelocity.y = (dy / distance) * baseSpeed * dtSeconds;
             }
         } else if (Math.abs(this.currentVelocity.x) > 0.1 || Math.abs(this.currentVelocity.y) > 0.1) {
             // Desaceleración gradual cuando el joystick no está activo
@@ -148,8 +161,8 @@ class Player {
 
             // Mover en esa dirección con velocidad constante
             if (Math.abs(dx) > 10 || Math.abs(dy) > 10) { // pequeña zona muerta
-                this.x += Math.cos(angle) * this.speed;
-                this.y += Math.sin(angle) * this.speed;
+                this.x += Math.cos(angle) * this.speed * dtSeconds;
+                this.y += Math.sin(angle) * this.speed * dtSeconds;
             } else {
                 this.currentVelocity.x = 0;
                 this.currentVelocity.y = 0;
@@ -161,10 +174,10 @@ class Player {
         this.y += this.currentVelocity.y;
 
         // Limitar al mundo
-        this.x = Math.max(0, Math.min(worldWidth, this.x));
-        this.y = Math.max(0, Math.min(worldHeight, this.y));
-        // this.x = Math.max(this.size, Math.min(worldWidth - this.size, this.x));
-        // this.y = Math.max(this.size, Math.min(worldHeight - this.size, this.y));
+        this.x = Math.max(0, Math.min(this.worldWidth, this.x));
+        this.y = Math.max(0, Math.min(this.worldHeight, this.y));
+        // this.x = Math.max(this.size, Math.min(this.worldWidth - this.size, this.x));
+        // this.y = Math.max(this.size, Math.min(this.worldHeight - this.size, this.y));
 
 
         // // Movimiento suave hacia el mouse
@@ -187,7 +200,7 @@ class Player {
         // }
     }
 
-    draw(ctx, canvas) {
+    draw(ctx) {
 
         // ctx.save();
         // ctx.fillStyle = this.color;
@@ -197,7 +210,7 @@ class Player {
 
         // if (this.type === 'player') {
         //     // Dirección del mouse (línea que indica hacia dónde va)
-        //     const angle = Math.atan2(this.mouse.y - canvas.height / 2, this.mouse.x - canvas.width / 2);
+        //     const angle = Math.atan2(this.mouse.y - this.canvas.height / 2, this.mouse.x - this.canvas.width / 2);
         //     ctx.beginPath();
         //     ctx.moveTo(this.x, this.y);
         //     ctx.lineTo(
@@ -248,7 +261,7 @@ class Player {
                 angle = Math.atan2(dy, dx);
             } else {
                 // Usar la posición del mouse cuando el joystick no está activo
-                angle = Math.atan2(this.mouse.y - canvas.height / 2, this.mouse.x - canvas.width / 2);
+                angle = Math.atan2(this.mouse.y - this.canvas.height / 2, this.mouse.x - this.canvas.width / 2);
             }
         } else {
             // Movimiento automático para los bots (simulando el comportamiento de la pupila)

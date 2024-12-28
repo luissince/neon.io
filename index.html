@@ -1,6 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cómete esta .... bolita</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
       * {
         margin: 0;
@@ -10,92 +14,115 @@
 
       body {
         font-family: monospace;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        background: white;
+        width: 100vw;
+        height: 100vh;
         overflow: hidden;
-        font-size: 12px;
+        background: linear-gradient(
+          45deg,
+          #ff9a9e 0%,
+          #fad0c4 99%,
+          #fad0c4 100%
+        );
+        animation: gradientBG 15s ease infinite;
       }
 
-      #musicButtonContainer{
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      #musicButtonContainer {
         position: fixed;
-        background-color: rgba(0, 0, 0, 0.7);
         left: 0;
         right: 0;
         top: 0;
         bottom: 0;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         z-index: 1000;
+        background-color: rgba(0, 0, 0, 0.7);
+        transition: opacity 0.5s ease;
+        padding: 30px;
       }
 
-      /* Asegura que el botón esté centrado */
+      #musicButtonContainer.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #musicButtonContainer h1 {
+        font-size: 2rem;
+        color: white;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
       #startMusicButton {
-        padding: 10px 20px;
-        font-size: 1.5rem;
+        font-family: monospace;
+        padding: 20px 30px;
+        font-size: 1rem;
         cursor: pointer;
         background-color: #4caf50;
         color: white;
         border: none;
         border-radius: 5px;
-        transition: background-color 0.3s;
+        transition: background-color 0.3s, transform 0.3s;
       }
 
       #startMusicButton:hover {
         background-color: #45a049;
+        transform: scale(1.05);
+      }
+
+      #game-description {
+        color: white;
+        font-size: 1rem;
+        max-width: 600px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      #leaderboard,
+      #players,
+      #fps,
+      #gameTime {
+        position: fixed;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        color: white;
+        z-index: 100;
+        font-size: 0.8rem;
       }
 
       #leaderboard {
-        position: fixed;
         top: 10px;
         right: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        padding: 10px;
-        border-radius: 5px;
-        color: white;
-        z-index: 100;
-        font-size: 1.5rem;
       }
 
       #players {
-        position: fixed;
         top: 10px;
         left: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        padding: 10px;
-        border-radius: 5px;
-        color: white;
-        z-index: 100;
-        font-size: 1.5rem;
       }
 
       #fps {
-        position: fixed;
         top: 50px;
         left: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        padding: 10px;
-        border-radius: 5px;
-        color: white;
-        z-index: 100;
-        font-size: 1.5rem;
       }
 
       #gameTime {
-        position: fixed;
         top: 90px;
         left: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        padding: 10px;
-        border-radius: 5px;
-        color: white;
-        z-index: 100;
-        font-size: 1.5rem;
       }
 
       #game-container {
@@ -130,6 +157,98 @@
     </style>
   </head>
   <body>
+    <div id="musicButtonContainer">
+      <h1>Cómete esta .... bolita</h1>
+
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -100 200 200">
+        <!-- Filtro para el efecto de brillo -->
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- Grupo principal con el efecto de brillo -->
+        <g filter="url(#glow)">
+          <!-- Cuerpo principal -->
+          <circle cx="0" cy="0" r="50" fill="#4A90E2" />
+
+          <!-- Ojos (blancos) -->
+          <circle cx="-15" cy="-10" r="10" fill="white" />
+          <circle cx="15" cy="-10" r="10" fill="white" />
+
+          <!-- Pupilas -->
+          <circle cx="-15" cy="-10" r="5" fill="black">
+            <!-- Animación de las pupilas -->
+            <animate
+              attributeName="cx"
+              values="-18;-12;-18"
+              dur="3s"
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="cy"
+              values="-13;-7;-13"
+              dur="3s"
+              repeatCount="indefinite"
+            />
+          </circle>
+          <circle cx="15" cy="-10" r="5" fill="black">
+            <animate
+              attributeName="cx"
+              values="12;18;12"
+              dur="3s"
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="cy"
+              values="-13;-7;-13"
+              dur="3s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        </g>
+
+        <!-- Texto del nombre -->
+        <text
+          x="0"
+          y="-70"
+          text-anchor="middle"
+          fill="white"
+          font-family="Arial"
+          font-size="20"
+          font-weight="bold"
+          filter="url(#glow)"
+        >
+          Player
+        </text>
+
+        <!-- Puntuación -->
+        <text
+          x="0"
+          y="85"
+          text-anchor="middle"
+          fill="white"
+          font-family="Arial"
+          font-size="20"
+          font-weight="bold"
+          filter="url(#glow)"
+        >
+          100
+        </text>
+      </svg>
+
+      <p id="game-description">
+        Devora bolitas, crece y domina el juego. ¿Serás el más grande come
+        bolas?
+      </p>
+      <button id="startMusicButton">Iniciar el Juego</button>
+    </div>
+
     <div id="leaderboard">
       Top 5 Jugadores<br />
       <span id="top"></span>
@@ -148,20 +267,14 @@
       <canvas id="minimap"></canvas>
     </div>
 
-    <!-- Botón para iniciar la música -->
-   <div id="musicButtonContainer">
-     <button id="startMusicButton">Iniciar el Juego</button>
-   </div>
-
-    <!-- Reproductor de música -->
     <audio id="backgroundMusic" loop>
       <source src="Brain Dance.mp3" type="audio/mp3" />
       Tu navegador no soporta la etiqueta de audio.
     </audio>
 
-    <script src="camera.js"></script>
+    <!-- <script src="camera.js"></script>
     <script src="point.js"></script>
-    <script src="player.js"></script>
-    <script src="main.js"></script>
+    <script src="player.js"></script> -->
+    <script src="/src/main.js" type="module"></script>
   </body>
 </html>
