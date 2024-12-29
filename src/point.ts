@@ -1,12 +1,19 @@
 export default class Point {
-    constructor(x, y, size, hue) {
+
+    // x, y, size, hue
+    x: number;
+    y: number;
+    size: number;
+    hue: number;
+
+    constructor(x: number, y: number, size: number, hue: number) {
         this.x = x;
         this.y = y;
         this.size = size;
         this.hue = hue;
     }
 
-    draw(ctx) {
+    draw(ctx: CanvasRenderingContext2D) {
         ctx.save();
         ctx.shadowBlur = 10;
         ctx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;

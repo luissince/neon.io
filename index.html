@@ -27,12 +27,7 @@
         width: 100vw;
         height: 100vh;
         overflow: hidden;
-        background: linear-gradient(
-          45deg,
-          #ff9a9e 0%,
-          #fad0c4 99%,
-          #fad0c4 100%
-        );
+        background: black;
         animation: gradientBG 15s ease infinite;
       }
 
@@ -48,7 +43,7 @@
         }
       }
 
-      #musicButtonContainer {
+      .musicButtonContainer {
         position: fixed;
         left: 0;
         right: 0;
@@ -64,12 +59,12 @@
         padding: 30px;
       }
 
-      #musicButtonContainer.hidden {
+      .musicButtonContainer.hidden {
         opacity: 0;
         pointer-events: none;
       }
 
-      #musicButtonContainer h1 {
+      .musicButtonContainer h1 {
         font-size: 2rem;
         color: white;
         text-transform: uppercase;
@@ -77,7 +72,7 @@
         text-align: center;
       }
 
-      #startMusicButton {
+      .musicButtonContainer button {
         font-family: monospace;
         padding: 20px 30px;
         font-size: 1rem;
@@ -89,12 +84,12 @@
         transition: background-color 0.3s, transform 0.3s;
       }
 
-      #startMusicButton:hover {
+      .musicButtonContainer button:hover {
         background-color: #45a049;
         transform: scale(1.05);
       }
 
-      #game-description {
+      .musicButtonContainer p {
         color: white;
         font-size: 1rem;
         max-width: 600px;
@@ -167,8 +162,8 @@
     </style>
   </head>
   <body>
-    <div id="musicButtonContainer">
-      <h1>Cómete esta .... bolita</h1>
+    <div id="musicButtonContainer" class="musicButtonContainer">
+      <h1>Cómete esta bolita</h1>
 
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -100 200 200">
         <!-- Filtro para el efecto de brillo -->
@@ -285,6 +280,6 @@
     <!-- <script src="camera.js"></script>
     <script src="point.js"></script>
     <script src="player.js"></script> -->
-    <script src="/src/main.js" type="module"></script>
+    <script src="/src/main.ts" type="module"></script>
   </body>
 </html>
